@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "685155856831",
+    "project_id": "snackup-8fe96",
+    "storage_bucket": "snackup-8fe96.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:685155856831:android:2df64bce8711eb6ef5b10a",
+        "android_client_info": {
+          "package_name": "com.example.snackup"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "685155856831-fs0m7vb9jhp0s6aocg3t2ghkelurgkha.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAdNKrdRBFXOW0rOei9AddO7joTayLRB8o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "685155856831-fs0m7vb9jhp0s6aocg3t2ghkelurgkha.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
