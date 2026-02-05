@@ -105,10 +105,12 @@
   </style>
   <script id="splash-screen-script">
     function removeSplashFromWeb() {
-      document.getElementById("splash")?.remove();
-      document.getElementById("splash-branding")?.remove();
+      const splash = document.getElementById("splash");
+      const loadingContainer = document.querySelector(".loading-container");
+      if (splash) splash.remove();
+      if (loadingContainer) loadingContainer.remove();
       document.body.style.background = "transparent";
-    }
+    };
   </script>
   <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
 </head>
