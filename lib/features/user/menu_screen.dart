@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'product_detail_screen.dart';
 import 'package:snackup/theme/app_colors.dart';
 import 'package:snackup/theme/app_text.dart';
+import 'student_chat_screen.dart';
 
 class MenuScreen extends StatelessWidget {
   final String businessId;
@@ -58,6 +59,7 @@ class MenuScreen extends StatelessWidget {
         },
       ),
     );
+    
   }
 
   Widget _buildMenuList(List<QueryDocumentSnapshot> docs) {

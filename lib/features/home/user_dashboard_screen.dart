@@ -4,6 +4,7 @@ import 'user_home_screen.dart';
 import '../user/search_screen.dart';
 import '../user/cart_screen.dart';
 import '../user/profile_orders_screen.dart';
+import '../user/student_chat_screen.dart'; // <-- IMPORTAMOS EL CHAT
 import 'package:snackup/theme/app_colors.dart';
 import 'package:snackup/theme/app_text.dart';
 
@@ -77,6 +78,25 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
         onPageChanged: _onPageChanged,
         children: _widgetOptions,
       ),
+      
+      // --- ¡AQUÍ AÑADIMOS EL BOTÓN DEL BOT GLOBAL! ---
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const StudentChatScreen(),
+            ),
+          );
+        },
+        backgroundColor: AppColors.primary,
+        icon: const Icon(Icons.auto_awesome_rounded, color: Colors.white),
+        label: Text(
+          'SnackBot IA', 
+          style: AppText.body.copyWith(color: Colors.white, fontWeight: FontWeight.bold)
+        ),
+      ),
+      // ------------------------------------------------
+
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [

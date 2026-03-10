@@ -5,6 +5,9 @@ import '../auth/auth_gate.dart';
 import 'package:snackup/theme/app_colors.dart';
 import 'package:snackup/theme/app_text.dart';
 
+// 👇 IMPORTAMOS LA PANTALLA DEL CHAT (Ajusta la ruta según dónde la hayas guardado)
+import '../home/order_chat_screen.dart';
+
 class OrderDetailScreen extends StatefulWidget {
   final String orderId;
   const OrderDetailScreen({super.key, required this.orderId});
@@ -207,6 +210,34 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         foregroundColor: AppColors.textPrimary,
+        
+        // 👇 AQUÍ ESTÁ EL NUEVO BOTÓN DE CHAT
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: Icon(Icons.chat_bubble_rounded, color: AppColors.primary),
+              tooltip: 'Chat con el Estudiante',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => OrderChatScreen(
+                      orderId: widget.orderId,
+                      isBusiness: true, // TRUE porque estamos en la pantalla de la cocina
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+        // 👆 FIN DEL BOTÓN NUEVO
+        
       ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: _orderRef.snapshots(),

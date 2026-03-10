@@ -45,8 +45,6 @@ dependencies:
   # --- Utilidades ---
   # Recomendado para manejar el estado de la app de forma simple (como el estado de login)
   provider: ^6.1.2
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   mobile_scanner: ^7.1.3
   fl_chart: ^0.68.0
@@ -57,7 +55,7 @@ dependencies:
   firebase_messaging: ^14.9.2 # (O la versión más reciente)
   audioplayers: ^6.0.0   # Para el sonido de alerta
   flutter_launcher_icons: "^0.13.1"
-  
+  google_generative_ai: ^0.4.6
   # 2. Para la Pantalla de Carga (Splash Screen)
   flutter_native_splash: "^2.3.1"
 
