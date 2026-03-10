@@ -41,11 +41,13 @@ class RoleGate extends StatelessWidget {
           return const LoadingScreen();
         }
         if (snapshot.hasError) {
-          return const Scaffold(body: Center(child: Text("Error al cargar datos")));
+          return const Scaffold(
+            body: Center(child: Text("Error al cargar datos")),
+          );
         }
         if (!snapshot.data!.exists || snapshot.data!.data() == null) {
           Future.microtask(() => FirebaseAuth.instance.signOut());
-          return const LoginScreen(); 
+          return const LoginScreen();
         }
 
         final data = snapshot.data!.data() as Map<String, dynamic>;
@@ -56,7 +58,7 @@ class RoleGate extends StatelessWidget {
         } else if (role == 'user') {
           // --- ¡CAMBIO AQUÍ! ---
           // Mandamos al usuario al nuevo Dashboard
-          return const UserDashboardScreen(); 
+          return const UserDashboardScreen();
         }
 
         Future.microtask(() => FirebaseAuth.instance.signOut());
@@ -71,10 +73,6 @@ class LoadingScreen extends StatelessWidget {
   const LoadingScreen({super.key});
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }

@@ -54,9 +54,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           }
 
           final docs = snapshot.data!.docs;
-          
+
           final double totalRevenue = _calculateTotalRevenue(docs);
-          final Map<String, int> paymentMethods = _calculatePaymentMethods(docs);
+          final Map<String, int> paymentMethods = _calculatePaymentMethods(
+            docs,
+          );
           final Map<String, int> topItems = _calculateTopItems(docs);
           final Map<int, double> salesByDay = _calculateSalesByDay(docs);
           final int totalOrders = docs.length;
@@ -120,17 +122,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             const SizedBox(height: 16),
             Text(
               'Error al cargar estadísticas',
-              style: AppText.h3.copyWith(
-                color: AppColors.textPrimary,
-              ),
+              style: AppText.h3.copyWith(color: AppColors.textPrimary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               'Verifica tu conexión e intenta nuevamente',
-              style: AppText.body.copyWith(
-                color: AppColors.textSecondary,
-              ),
+              style: AppText.body.copyWith(color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
           ],
@@ -144,15 +142,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(
-            color: AppColors.primary,
-          ),
+          CircularProgressIndicator(color: AppColors.primary),
           const SizedBox(height: 16),
           Text(
             'Cargando estadísticas...',
-            style: AppText.body.copyWith(
-              color: AppColors.textSecondary,
-            ),
+            style: AppText.body.copyWith(color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -182,17 +176,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             const SizedBox(height: 24),
             Text(
               'Aún no tienes estadísticas',
-              style: AppText.h3.copyWith(
-                color: AppColors.textPrimary,
-              ),
+              style: AppText.h3.copyWith(color: AppColors.textPrimary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
               'Los datos aparecerán aquí una vez que completes tus primeros pedidos',
-              style: AppText.body.copyWith(
-                color: AppColors.textSecondary,
-              ),
+              style: AppText.body.copyWith(color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
           ],
@@ -300,10 +290,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       decoration: BoxDecoration(
         color: AppColors.background,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.borders,
-          width: 1,
-        ),
+        border: Border.all(color: AppColors.borders, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -318,9 +305,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: AppText.notes.copyWith(
-              color: AppColors.textSecondary,
-            ),
+            style: AppText.notes.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 16),
           child,
@@ -331,12 +316,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Widget _buildSalesByDayChart(Map<int, double> salesByDay) {
     final maxSales = salesByDay.values.reduce((a, b) => a > b ? a : b);
-    
+
     final List<BarChartGroupData> barGroups = List.generate(7, (index) {
       final day = index + 1;
       final sales = salesByDay[day] ?? 0.0;
       final isToday = day == DateTime.now().weekday;
-      
+
       return BarChartGroupData(
         x: day,
         barRods: [
@@ -348,8 +333,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               topLeft: Radius.circular(6),
               topRight: Radius.circular(6),
             ),
-            gradient: _createBarGradient(isToday ? AppColors.accent : AppColors.primary),
-          )
+            gradient: _createBarGradient(
+              isToday ? AppColors.accent : AppColors.primary,
+            ),
+          ),
         ],
         showingTooltipIndicators: sales > 0 ? [0] : [],
       );
@@ -376,14 +363,30 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   );
                   String text;
                   switch (value.toInt()) {
-                    case 1: text = 'Lun'; break;
-                    case 2: text = 'Mar'; break;
-                    case 3: text = 'Mié'; break;
-                    case 4: text = 'Jue'; break;
-                    case 5: text = 'Vie'; break;
-                    case 6: text = 'Sáb'; break;
-                    case 7: text = 'Dom'; break;
-                    default: text = ''; break;
+                    case 1:
+                      text = 'Lun';
+                      break;
+                    case 2:
+                      text = 'Mar';
+                      break;
+                    case 3:
+                      text = 'Mié';
+                      break;
+                    case 4:
+                      text = 'Jue';
+                      break;
+                    case 5:
+                      text = 'Vie';
+                      break;
+                    case 6:
+                      text = 'Sáb';
+                      break;
+                    case 7:
+                      text = 'Dom';
+                      break;
+                    default:
+                      text = '';
+                      break;
                   }
                   return SideTitleWidget(
                     axisSide: meta.axisSide,
@@ -411,21 +414,24 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 interval: maxSales > 0 ? (maxSales / 4).ceilToDouble() : 1,
               ),
             ),
-            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
           ),
           borderData: FlBorderData(
             show: true,
-            border: Border.all(
-              color: AppColors.borders,
-              width: 1,
-            ),
+            border: Border.all(color: AppColors.borders, width: 1),
           ),
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
             drawHorizontalLine: true,
-            horizontalInterval: maxSales > 0 ? (maxSales / 4).ceilToDouble() : 1,
+            horizontalInterval: maxSales > 0
+                ? (maxSales / 4).ceilToDouble()
+                : 1,
             getDrawingHorizontalLine: (value) => FlLine(
               color: AppColors.borders.withOpacity(0.3),
               strokeWidth: 1,
@@ -434,11 +440,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           barTouchData: BarTouchData(
             enabled: true,
             touchTooltipData: BarTouchTooltipData(
-              // --- ¡CORRECCIÓN AQUÍ! ---
-              getTooltipColor: (BarChartGroupData group) {
-                return AppColors.textPrimary;
-              },
-              // --------------------------
+              tooltipBgColor: AppColors.textPrimary,
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
                 return BarTooltipItem(
                   '\$${rod.toY.toStringAsFixed(2)}',
@@ -463,10 +465,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final top5Items = sortedItems.take(5).toList();
     final maxValue = top5Items.first.value.toDouble();
 
-    final List<BarChartGroupData> barGroups = List.generate(top5Items.length, (index) {
+    final List<BarChartGroupData> barGroups = List.generate(top5Items.length, (
+      index,
+    ) {
       final item = top5Items[index];
       final percentage = (item.value / maxValue * 100).round();
-      
+
       return BarChartGroupData(
         x: index,
         barRods: [
@@ -479,7 +483,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               topRight: Radius.circular(6),
             ),
             gradient: _createBarGradient(_getProductColor(index)),
-          )
+          ),
         ],
         showingTooltipIndicators: [0],
       );
@@ -499,13 +503,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               sideTitles: SideTitles(
                 showTitles: true,
                 getTitlesWidget: (value, meta) {
-                  if (value.toInt() >= top5Items.length) return const SizedBox.shrink();
+                  if (value.toInt() >= top5Items.length)
+                    return const SizedBox.shrink();
                   final item = top5Items[value.toInt()];
-                  final shortName = item.key.length > 12 
-                      ? '${item.key.substring(0, 12)}...' 
+                  final shortName = item.key.length > 12
+                      ? '${item.key.substring(0, 12)}...'
                       : item.key;
                   return SideTitleWidget(
                     axisSide: meta.axisSide,
+                    space: 8,
                     child: Text(
                       shortName,
                       style: const TextStyle(
@@ -538,21 +544,24 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 interval: maxValue > 0 ? (maxValue / 4).ceilToDouble() : 1,
               ),
             ),
-            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
           ),
           borderData: FlBorderData(
             show: true,
-            border: Border.all(
-              color: AppColors.borders,
-              width: 1,
-            ),
+            border: Border.all(color: AppColors.borders, width: 1),
           ),
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
             drawHorizontalLine: true,
-            horizontalInterval: maxValue > 0 ? (maxValue / 4).ceilToDouble() : 1,
+            horizontalInterval: maxValue > 0
+                ? (maxValue / 4).ceilToDouble()
+                : 1,
             getDrawingHorizontalLine: (value) => FlLine(
               color: AppColors.borders.withOpacity(0.3),
               strokeWidth: 1,
@@ -561,11 +570,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           barTouchData: BarTouchData(
             enabled: true,
             touchTooltipData: BarTouchTooltipData(
-              // --- ¡CORRECCIÓN AQUÍ! ---
-              getTooltipColor: (BarChartGroupData group) {
-                return AppColors.textPrimary;
-              },
-              // --------------------------
+              tooltipBgColor: AppColors.textPrimary,
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
                 final item = top5Items[groupIndex];
                 return BarTooltipItem(
@@ -585,7 +590,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Widget _buildPaymentChart(Map<String, int> paymentMethods) {
     if (paymentMethods.isEmpty) return _buildNoDataPlaceholder();
-    
+
     final total = paymentMethods.values.reduce((a, b) => a + b);
     final List<PieChartSectionData> sections = [];
     final List<Color> colors = [
@@ -636,7 +641,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  Widget _buildPaymentLegend(Map<String, int> paymentMethods, List<Color> colors) {
+  Widget _buildPaymentLegend(
+    Map<String, int> paymentMethods,
+    List<Color> colors,
+  ) {
     final total = paymentMethods.values.reduce((a, b) => a + b);
     int colorIndex = 0;
 
@@ -647,17 +655,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         final percentage = ((entry.value / total) * 100).round();
         final color = colors[colorIndex % colors.length];
         colorIndex++;
-        
+
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               width: 12,
               height: 12,
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             ),
             const SizedBox(width: 6),
             Text(
@@ -692,9 +697,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             const SizedBox(height: 8),
             Text(
               'No hay datos disponibles',
-              style: AppText.notes.copyWith(
-                color: AppColors.textSecondary,
-              ),
+              style: AppText.notes.copyWith(color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -704,10 +707,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   LinearGradient _createBarGradient(Color baseColor) {
     return LinearGradient(
-      colors: [
-        baseColor,
-        baseColor.withOpacity(0.7),
-      ],
+      colors: [baseColor, baseColor.withOpacity(0.7)],
       begin: Alignment.bottomCenter,
       end: Alignment.topCenter,
     );
@@ -756,18 +756,22 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     }
     return counts;
   }
-  
+
   Map<int, double> _calculateSalesByDay(List<QueryDocumentSnapshot> docs) {
     Map<int, double> dailySales = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0};
     final now = DateTime.now();
-    final sevenDaysAgo = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 6));
+    final sevenDaysAgo = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(const Duration(days: 6));
 
     for (var doc in docs) {
       final timestamp = doc['createdAt'] as Timestamp?;
       final price = (doc['totalPrice'] as num?) ?? 0.0;
       if (timestamp == null) continue;
       final date = timestamp.toDate();
-      
+
       if (date.isAfter(sevenDaysAgo)) {
         dailySales[date.weekday] = (dailySales[date.weekday] ?? 0) + price;
       }
