@@ -434,11 +434,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           barTouchData: BarTouchData(
             enabled: true,
             touchTooltipData: BarTouchTooltipData(
-              // --- ¡CORRECCIÓN AQUÍ! ---
-              getTooltipColor: (BarChartGroupData group) {
-                return AppColors.textPrimary;
-              },
-              // --------------------------
+              // CORRECCIÓN APLICADA AQUÍ PARA COMPATIBILIDAD CON LA LIBRERÍA
+              tooltipBgColor: AppColors.textPrimary,
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
                 return BarTooltipItem(
                   '\$${rod.toY.toStringAsFixed(2)}',
@@ -465,7 +462,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
     final List<BarChartGroupData> barGroups = List.generate(top5Items.length, (index) {
       final item = top5Items[index];
-      final percentage = (item.value / maxValue * 100).round();
+      // final percentage = (item.value / maxValue * 100).round(); // no se usa
       
       return BarChartGroupData(
         x: index,
@@ -561,11 +558,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           barTouchData: BarTouchData(
             enabled: true,
             touchTooltipData: BarTouchTooltipData(
-              // --- ¡CORRECCIÓN AQUÍ! ---
-              getTooltipColor: (BarChartGroupData group) {
-                return AppColors.textPrimary;
-              },
-              // --------------------------
+              // CORRECCIÓN APLICADA AQUÍ TAMBIÉN
+              tooltipBgColor: AppColors.textPrimary,
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
                 final item = top5Items[groupIndex];
                 return BarTooltipItem(
@@ -597,12 +591,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     ];
 
     int colorIndex = 0;
-    paymentMethods.entries.forEach((entry) {
+    for (var entry in paymentMethods.entries) {
       final percentage = ((entry.value / total) * 100).round();
       sections.add(
         PieChartSectionData(
           value: entry.value.toDouble(),
-          title: '${percentage}%',
+          title: '$percentage%',
           radius: 60,
           color: colors[colorIndex % colors.length],
           titleStyle: AppText.notes.copyWith(
@@ -613,7 +607,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         ),
       );
       colorIndex++;
-    });
+    }
 
     return Column(
       children: [
@@ -724,11 +718,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return colors[index % colors.length];
   }
 
-  // --- FUNCIONES DE CÁLCULO (Sin cambios) ---
+  // --- FUNCIONES DE CÁLCULO ---
   double _calculateTotalRevenue(List<QueryDocumentSnapshot> docs) {
     double total = 0.0;
     for (var doc in docs) {
-      total += (doc['totalPrice'] as num?) ?? 0.0;
+      total += (doc['totalPrice'] as num?)?.toDouble() ?? 0.0;
     }
     return total;
   }
@@ -764,7 +758,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
     for (var doc in docs) {
       final timestamp = doc['createdAt'] as Timestamp?;
-      final price = (doc['totalPrice'] as num?) ?? 0.0;
+      final price = (doc['totalPrice'] as num?)?.toDouble() ?? 0.0;
       if (timestamp == null) continue;
       final date = timestamp.toDate();
       

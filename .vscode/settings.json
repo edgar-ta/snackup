@@ -1,4 +1,5 @@
 {
     "java.configuration.updateBuildConfiguration": "interactive",
-    "cmake.sourceDirectory": "D:/college/cuatrimestre-8/desarrollo-web-pro/parcial-1/saber-hacer/2026-01-21--snackup/linux"
+    "cmake.sourceDirectory": "D:/college/cuatrimestre-8/desarrollo-web-pro/parcial-1/saber-hacer/2026-01-21--snackup/linux",
+    "cmake.ignoreCMakeListsMissing": true
 }

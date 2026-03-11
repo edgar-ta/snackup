@@ -36,7 +36,7 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
   // ==========================================
   // 🔑 PON TU API KEY AQUÍ (NUNCA LA COMPARTAS)
   // ==========================================
-  final String apiKey = 'AIzaSyDNTP9CIJs4Uc9DOeg9yxo-vd_LP3i0FjM'; 
+  final String apiKey = 'aqui va la apisita.'; 
 
   @override
   void initState() {
