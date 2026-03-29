@@ -210,7 +210,8 @@ class _ProfileOrdersScreenState extends State<ProfileOrdersScreen>
   Widget _buildActiveOrderCard(QueryDocumentSnapshot doc) {
     final order = doc.data()! as Map<String, dynamic>;
     final String status = order['status'] ?? 'unknown';
-    final String numeroDeControl = order['userNumeroDeControl'] ?? '0000';
+    final String redeemCode =
+        order['redeemCode'] ?? order['userNumeroDeControl'] ?? '0000';
     final double totalPrice = order['totalPrice'] ?? 0.0;
     final List<dynamic> items = order['items'] ?? [];
 
@@ -419,10 +420,7 @@ class _ProfileOrdersScreenState extends State<ProfileOrdersScreen>
                       onPressed: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (ctx) => ShowQrScreen(
-                              orderId: doc.id,
-                              qrData: numeroDeControl,
-                            ),
+                            builder: (ctx) => ShowQrScreen(orderId: doc.id),
                           ),
                         );
                       },

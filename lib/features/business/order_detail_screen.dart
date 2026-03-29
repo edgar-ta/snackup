@@ -20,23 +20,18 @@ class OrderDetailScreen extends StatefulWidget {
 }
 
 class _OrderDetailScreenState extends State<OrderDetailScreen> {
-  late Future<OrderDetail?> _orderFuture;
+  late Stream<OrderDetail?> _orderStream;
 
   @override
   void initState() {
     super.initState();
-    _orderFuture = getOrderDetail(orderId: widget.orderId, isBusiness: true);
+    _orderStream = getOrderDetail(orderId: widget.orderId, isBusiness: true);
   }
 
   Future<void> _updateOrderStatus(String newStatus) async {
     try {
       if (mounted) {
-        setState(() {
-          _orderFuture = getOrderDetail(
-            orderId: widget.orderId,
-            isBusiness: true,
-          );
-        });
+        updateOrderStatus(orderId: widget.orderId, status: newStatus);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Pedido marcado como "$newStatus"'),
@@ -146,7 +141,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Ingresa el número de control del estudiante:',
+              'Ingresa el código que te indique el estudiante:',
               style: AppText.body.copyWith(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 16),
@@ -154,8 +149,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               controller: manualInputController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                labelText: 'Número de Control',
-                hintText: 'Ej. 2023143096',
+                labelText: 'Código de canje',
+                hintText: 'Ej. abcde12345',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -226,8 +221,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         elevation: 0,
         foregroundColor: AppColors.textPrimary,
       ),
-      body: FutureBuilder<OrderDetail?>(
-        future: _orderFuture,
+      body: StreamBuilder<OrderDetail?>(
+        stream: _orderStream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -277,7 +272,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           }
 
           final String status = orderDetail.status;
-          final String numeroDeControl = orderDetail.userNumeroDeControl;
+          final String redeemCode =
+              orderDetail.redeemCode ?? orderDetail.userNumeroDeControl;
           final List<OrderItem> items = orderDetail.items;
           final DateTime? orderTime = orderDetail.createdAt;
 
@@ -355,7 +351,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                           _buildInfoRow(
                             icon: Icons.badge_rounded,
                             label: 'No. Control',
-                            value: numeroDeControl,
+                            value: orderDetail.userNumeroDeControl,
                           ),
                           _buildInfoRow(
                             icon: Icons.payment_rounded,
@@ -407,7 +403,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       const SizedBox(height: 32),
 
                       // BOTONES DE ACCIÓN
-                      _buildActionButtons(status, numeroDeControl),
+                      _buildActionButtons(status, redeemCode),
                     ],
                   ),
                 ),
@@ -416,8 +412,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           );
         },
       ),
-      floatingActionButton: FutureBuilder<OrderDetail?>(
-        future: _orderFuture,
+      floatingActionButton: StreamBuilder<OrderDetail?>(
+        stream: _orderStream,
         builder: (context, snapshot) {
           final bool hasNewMessages = snapshot.data?.hasNewMessages ?? false;
           return FloatingActionButton.extended(
@@ -437,14 +433,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 orderId: widget.orderId,
                 isBusiness: true,
               );
-
-              if (!mounted) return;
-              setState(() {
-                _orderFuture = getOrderDetail(
-                  orderId: widget.orderId,
-                  isBusiness: true,
-                );
-              });
             },
             backgroundColor: AppColors.primary,
             icon: Stack(
@@ -603,7 +591,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
   }
 
-  Widget _buildActionButtons(String status, String numeroDeControl) {
+  Widget _buildActionButtons(String status, String redeemCode) {
     if (status == 'pending') {
       return Column(
         children: [
@@ -696,7 +684,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       return Column(
         children: [
           ElevatedButton(
-            onPressed: () => _startScanner(context, numeroDeControl),
+            onPressed: () => _startScanner(context, redeemCode),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.success,
               foregroundColor: Colors.white,
@@ -723,7 +711,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           ),
           const SizedBox(height: 12),
           OutlinedButton(
-            onPressed: () => _showManualInputDialog(numeroDeControl),
+            onPressed: () => _showManualInputDialog(redeemCode),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.textSecondary,
               minimumSize: const Size(double.infinity, 56),
