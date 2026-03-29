@@ -60,6 +60,7 @@ class OrderDetail {
   final List<OrderItem> items;
   final bool hasNewMessages;
   final bool isBusiness;
+  final String? redeemCode;
 
   OrderDetail({
     required this.orderId,
@@ -75,6 +76,7 @@ class OrderDetail {
     required this.items,
     required this.hasNewMessages,
     required this.isBusiness,
+    this.redeemCode,
   });
 
   factory OrderDetail.fromMap(
@@ -104,12 +106,13 @@ class OrderDetail {
           [],
       hasNewMessages: hasNewMessages,
       isBusiness: isBusiness,
+      redeemCode: map['redeemCode'] as String?,
     );
   }
 
   @override
   String toString() {
-    return 'OrderDetail(orderId: $orderId, businessId: $businessId, userId: $userId, userDisplayName: $userDisplayName, userNumeroDeControl: $userNumeroDeControl, status: $status, totalPrice: $totalPrice, paymentMethod: $paymentMethod, createdAt: $createdAt, scheduledPickupTime: $scheduledPickupTime, items: $items, hasNewMessages: $hasNewMessages, isBusiness: $isBusiness)';
+    return 'OrderDetail(orderId: $orderId, businessId: $businessId, userId: $userId, userDisplayName: $userDisplayName, userNumeroDeControl: $userNumeroDeControl, status: $status, totalPrice: $totalPrice, paymentMethod: $paymentMethod, createdAt: $createdAt, scheduledPickupTime: $scheduledPickupTime, items: $items, hasNewMessages: $hasNewMessages, isBusiness: $isBusiness, redeemCode: $redeemCode)';
   }
 
   static DateTime? _parseDateTime(dynamic value) {

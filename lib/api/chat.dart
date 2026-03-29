@@ -54,8 +54,6 @@ Future<void> updateLastSeenTimeInSupportChat({
   }
 
   await chatRef.update(object);
-
-  print("Hello world!");
 }
 
 Stream<QuerySnapshot<Map<String, dynamic>>> getMessagesInSupportChat({
