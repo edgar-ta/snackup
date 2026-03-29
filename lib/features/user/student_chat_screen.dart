@@ -18,10 +18,10 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
   // ==========================================
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  
+
   late String _chatId;
   final String _userId = FirebaseAuth.instance.currentUser?.uid ?? '';
-  
+
   bool _isGeminiInitialized = false;
   bool _isTyping = false;
   bool _hasError = false;
@@ -36,7 +36,7 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
   // ==========================================
   // 🔑 PON TU API KEY AQUÍ (NUNCA LA COMPARTAS)
   // ==========================================
-  final String apiKey = 'AIzaSyDNTP9CIJs4Uc9DOeg9yxo-vd_LP3i0FjM'; 
+  final String apiKey = 'AIzaSyBbekjlss8WDfwvmxw8BtqwvTWxiGDq9YM';
 
   @override
   void initState() {
@@ -60,7 +60,9 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
       }
 
       // 1.1 Preparar documento de chat en Firestore
-      final chatRef = FirebaseFirestore.instance.collection('chats').doc(_chatId);
+      final chatRef = FirebaseFirestore.instance
+          .collection('chats')
+          .doc(_chatId);
       final chatDoc = await chatRef.get();
       if (!chatDoc.exists) {
         await chatRef.set({
@@ -76,61 +78,96 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
           .collection('businesses')
           .where('isOpen', isEqualTo: true)
           .get();
-          
+
       Map<String, String> businessNames = {
-        for (var doc in businessesSnapshot.docs) doc.id: doc.data()['name'] ?? 'Local'
+        for (var doc in businessesSnapshot.docs)
+          doc.id: doc.data()['name'] ?? 'Local',
       };
 
       final productsSnapshot = await FirebaseFirestore.instance
           .collection('products')
           .where('isAvailable', isEqualTo: true)
           .get();
-      
+
       // GUARDAMOS EL NOMBRE DEL LOCAL DENTRO DEL PRODUCTO PARA DESEMPATAR
       _availableProducts = productsSnapshot.docs.map((doc) {
         final data = doc.data();
-        data['productId'] = doc.id; 
+        data['productId'] = doc.id;
         data['businessName'] = businessNames[data['businessId']] ?? 'Un local';
         return data;
       }).toList();
 
-      String menuContext = _availableProducts.map((p) {
-        return "- Producto: '${p['name']}' | Precio: \$${p['price']} | Local: '${p['businessName']}'";
-      }).join("\n");
+      String menuContext = _availableProducts
+          .map((p) {
+            return "- Producto: '${p['name']}' | Precio: \$${p['price']} | Local: '${p['businessName']}'";
+          })
+          .join("\n");
 
       // ==========================================
       // 🛠️ HERRAMIENTAS DE FUNCTION CALLING
       // ==========================================
-      final toolAccionesPedido = Tool(functionDeclarations: [
-        FunctionDeclaration(
-          'agregar_al_carrito',
-          'Agrega un producto al carrito. REQUIERE saber de qué local es el producto.',
-          Schema(
-            SchemaType.object,
-            properties: {
-              'producto': Schema(SchemaType.string, description: 'Nombre EXACTO del producto.'),
-              'local': Schema(SchemaType.string, description: 'Nombre EXACTO del local que lo vende.'),
-              'cantidad': Schema(SchemaType.integer, description: 'Cantidad deseada.'),
-            },
-            requiredProperties: ['producto', 'local', 'cantidad'],
+      final toolAccionesPedido = Tool(
+        functionDeclarations: [
+          FunctionDeclaration(
+            'agregar_al_carrito',
+            'Agrega un producto al carrito. REQUIERE saber de qué local es el producto.',
+            Schema(
+              SchemaType.object,
+              properties: {
+                'producto': Schema(
+                  SchemaType.string,
+                  description: 'Nombre EXACTO del producto.',
+                ),
+                'local': Schema(
+                  SchemaType.string,
+                  description: 'Nombre EXACTO del local que lo vende.',
+                ),
+                'cantidad': Schema(
+                  SchemaType.integer,
+                  description: 'Cantidad deseada.',
+                ),
+              },
+              requiredProperties: ['producto', 'local', 'cantidad'],
+            ),
           ),
-        ),
-        FunctionDeclaration(
-          'crear_orden_directa',
-          'Envía un pedido directo a cocina (bypass carrito). REQUIERE producto, local, cantidad, método de pago y hora.',
-          Schema(
-            SchemaType.object,
-            properties: {
-              'producto': Schema(SchemaType.string, description: 'Nombre EXACTO del producto.'),
-              'local': Schema(SchemaType.string, description: 'Nombre EXACTO del local que lo vende.'),
-              'cantidad': Schema(SchemaType.integer, description: 'Cantidad deseada.'),
-              'metodo_pago': Schema(SchemaType.string, description: 'Método de pago (Efectivo, Tarjeta, Vale).'),
-              'hora_recogida': Schema(SchemaType.string, description: 'Hora en formato HH:MM o la palabra "ahora".'),
-            },
-            requiredProperties: ['producto', 'local', 'cantidad', 'metodo_pago', 'hora_recogida'],
+          FunctionDeclaration(
+            'crear_orden_directa',
+            'Envía un pedido directo a cocina (bypass carrito). REQUIERE producto, local, cantidad, método de pago y hora.',
+            Schema(
+              SchemaType.object,
+              properties: {
+                'producto': Schema(
+                  SchemaType.string,
+                  description: 'Nombre EXACTO del producto.',
+                ),
+                'local': Schema(
+                  SchemaType.string,
+                  description: 'Nombre EXACTO del local que lo vende.',
+                ),
+                'cantidad': Schema(
+                  SchemaType.integer,
+                  description: 'Cantidad deseada.',
+                ),
+                'metodo_pago': Schema(
+                  SchemaType.string,
+                  description: 'Método de pago (Efectivo, Tarjeta, Vale).',
+                ),
+                'hora_recogida': Schema(
+                  SchemaType.string,
+                  description: 'Hora en formato HH:MM o la palabra "ahora".',
+                ),
+              },
+              requiredProperties: [
+                'producto',
+                'local',
+                'cantidad',
+                'metodo_pago',
+                'hora_recogida',
+              ],
+            ),
           ),
-        )
-      ]);
+        ],
+      );
 
       // 1.4 Configurar el Modelo
       _model = GenerativeModel(
@@ -156,7 +193,6 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
 
       _chatSession = _model.startChat();
       setState(() => _isGeminiInitialized = true);
-
     } catch (e) {
       debugPrint("Error inicializando IA: $e");
       setState(() => _hasError = true);
@@ -193,10 +229,12 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
       if (botReply.isNotEmpty) {
         await _saveMessageToFirestore(botReply, 'bot');
       }
-
     } catch (e) {
       debugPrint('Error en el chat: $e');
-      await _saveMessageToFirestore('Uy, tuve un cortocircuito 🔌 Revisa tu conexión a internet e intenta de nuevo.', 'system');
+      await _saveMessageToFirestore(
+        'Uy, tuve un cortocircuito 🔌 Revisa tu conexión a internet e intenta de nuevo.',
+        'system',
+      );
     } finally {
       if (mounted) {
         setState(() => _isTyping = false);
@@ -208,8 +246,9 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
   Future<String> _handleFunctionCall(FunctionCall call) async {
     final funcName = call.name;
     final args = call.args;
-    
-    final productoNombre = args['producto']?.toString().toLowerCase().trim() ?? '';
+
+    final productoNombre =
+        args['producto']?.toString().toLowerCase().trim() ?? '';
     final localNombre = args['local']?.toString().toLowerCase().trim() ?? '';
     final cantidad = (args['cantidad'] as num?)?.toInt() ?? 1;
 
@@ -226,38 +265,41 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
     // Si no lo encuentra, le pide a la IA que verifique o pregunte
     if (prodTarget == null) {
       final res = await _chatSession.sendMessage(
-        Content.functionResponse(funcName, {'error': 'Producto no encontrado en ese local específico.'})
+        Content.functionResponse(funcName, {
+          'error': 'Producto no encontrado en ese local específico.',
+        }),
       );
-      return res.text?.trim() ?? 'Uy, parece que ese local no tiene ese producto exacto. ¿Verificamos el nombre?';
+      return res.text?.trim() ??
+          'Uy, parece que ese local no tiene ese producto exacto. ¿Verificamos el nombre?';
     }
 
     // 2.2 Ejecutar la acción según la herramienta elegida
     if (funcName == 'agregar_al_carrito') {
       await _executeAddToCart(prodTarget, cantidad);
       await _saveMessageToFirestore(
-        '🛒 SISTEMA: Has agregado $cantidad x "${prodTarget['name']}" (de ${prodTarget['businessName']}) a tu carrito.', 
-        'system'
+        '🛒 SISTEMA: Has agregado $cantidad x "${prodTarget['name']}" (de ${prodTarget['businessName']}) a tu carrito.',
+        'system',
       );
-      
+
       final res = await _chatSession.sendMessage(
-        Content.functionResponse(funcName, {'status': 'success'})
+        Content.functionResponse(funcName, {'status': 'success'}),
       );
       return res.text?.trim() ?? '¡Listo! Ya lo agregué a tu carrito. 🛒';
-
     } else if (funcName == 'crear_orden_directa') {
       final metodoPago = args['metodo_pago']?.toString() ?? 'Efectivo';
       final horaRecogida = args['hora_recogida']?.toString() ?? 'ahora';
-      
+
       await _executeDirectOrder(prodTarget, cantidad, metodoPago, horaRecogida);
       await _saveMessageToFirestore(
-        '🚀 SISTEMA: Orden enviada a ${prodTarget['businessName']}.\n📦 $cantidad x "${prodTarget['name']}"\n💳 $metodoPago | ⏰ $horaRecogida', 
-        'system'
+        '🚀 SISTEMA: Orden enviada a ${prodTarget['businessName']}.\n📦 $cantidad x "${prodTarget['name']}"\n💳 $metodoPago | ⏰ $horaRecogida',
+        'system',
       );
-      
+
       final res = await _chatSession.sendMessage(
-        Content.functionResponse(funcName, {'status': 'success'})
+        Content.functionResponse(funcName, {'status': 'success'}),
       );
-      return res.text?.trim() ?? '¡Hecho! Tu pedido ya va para la cocina de ${prodTarget['businessName']}. 🔥';
+      return res.text?.trim() ??
+          '¡Hecho! Tu pedido ya va para la cocina de ${prodTarget['businessName']}. 🔥';
     }
 
     return 'Herramienta desconocida.';
@@ -267,20 +309,27 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
   // 3. OPERACIONES DE BASE DE DATOS
   // ==========================================
   Future<void> _saveMessageToFirestore(String text, String sender) async {
-    await FirebaseFirestore.instance.collection('chats').doc(_chatId).collection('messages').add({
-      'text': text,
-      'sender': sender,
-      'timestamp': FieldValue.serverTimestamp(),
-    });
+    await FirebaseFirestore.instance
+        .collection('chats')
+        .doc(_chatId)
+        .collection('messages')
+        .add({
+          'text': text,
+          'sender': sender,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
   }
 
-  Future<void> _executeAddToCart(Map<String, dynamic> product, int quantity) async {
+  Future<void> _executeAddToCart(
+    Map<String, dynamic> product,
+    int quantity,
+  ) async {
     final cartRef = FirebaseFirestore.instance
         .collection('users')
         .doc(_userId)
         .collection('cart')
         .doc(product['productId']);
-        
+
     await cartRef.set({
       'productId': product['productId'],
       'businessId': product['businessId'],
@@ -293,10 +342,18 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
     });
   }
 
-  Future<void> _executeDirectOrder(Map<String, dynamic> product, int quantity, String paymentMethod, String pickupTime) async {
-    final userDoc = await FirebaseFirestore.instance.collection('users').doc(_userId).get();
+  Future<void> _executeDirectOrder(
+    Map<String, dynamic> product,
+    int quantity,
+    String paymentMethod,
+    String pickupTime,
+  ) async {
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(_userId)
+        .get();
     final userData = userDoc.data() ?? {};
-    
+
     Timestamp? pickupTimestamp;
     if (pickupTime.toLowerCase() != 'ahora') {
       try {
@@ -304,10 +361,16 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
         if (parts.length >= 2) {
           final now = DateTime.now();
           pickupTimestamp = Timestamp.fromDate(
-            DateTime(now.year, now.month, now.day, int.parse(parts[0]), int.parse(parts[1]))
+            DateTime(
+              now.year,
+              now.month,
+              now.day,
+              int.parse(parts[0]),
+              int.parse(parts[1]),
+            ),
           );
         }
-      } catch (_) {} 
+      } catch (_) {}
     }
 
     await FirebaseFirestore.instance.collection('orders').add({
@@ -315,7 +378,7 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
       'userId': _userId,
       'userDisplayName': userData['displayName'] ?? 'Estudiante UTSJR',
       'userNumeroDeControl': userData['numeroDeControl'] ?? 'N/A',
-      'status': 'pending', 
+      'status': 'pending',
       'totalPrice': (product['price'] ?? 0.0) * quantity,
       'paymentMethod': paymentMethod,
       'createdAt': FieldValue.serverTimestamp(),
@@ -327,7 +390,7 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
           'quantity': quantity,
           'price': product['price'],
           'notes': 'Pedido Express vía IA 🤖',
-        }
+        },
       ],
     });
   }
@@ -339,9 +402,9 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
     if (_scrollController.hasClients) {
       Future.delayed(const Duration(milliseconds: 300), () {
         _scrollController.animateTo(
-          0.0, 
-          duration: const Duration(milliseconds: 300), 
-          curve: Curves.easeOut
+          0.0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
         );
       });
     }
@@ -356,9 +419,9 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Text(
-              'Error al conectar con la IA.\nVerifica tu API Key o conexión a internet.', 
-              textAlign: TextAlign.center, 
-              style: AppText.body.copyWith(color: AppColors.error)
+              'Error al conectar con la IA.\nVerifica tu API Key o conexión a internet.',
+              textAlign: TextAlign.center,
+              style: AppText.body.copyWith(color: AppColors.error),
             ),
           ),
         ),
@@ -373,8 +436,14 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
           children: [
             const Text('Asistente SnackUp'),
             Text(
-              _isGeminiInitialized ? '🤖 En línea - Tomando pedidos' : 'Conectando cerebro...',
-              style: AppText.notes.copyWith(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w600),
+              _isGeminiInitialized
+                  ? '🤖 En línea - Tomando pedidos'
+                  : 'Conectando cerebro...',
+              style: AppText.notes.copyWith(
+                color: AppColors.primary,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
@@ -393,12 +462,13 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
                   .orderBy('timestamp', descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+                if (snapshot.connectionState == ConnectionState.waiting &&
+                    !snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                
+
                 final messages = snapshot.data?.docs ?? [];
-                
+
                 if (messages.isEmpty) {
                   return Center(
                     child: Padding(
@@ -406,12 +476,18 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.auto_awesome_rounded, size: 64, color: AppColors.primary.withOpacity(0.5)),
+                          Icon(
+                            Icons.auto_awesome_rounded,
+                            size: 64,
+                            color: AppColors.primary.withOpacity(0.5),
+                          ),
                           const SizedBox(height: 16),
                           Text(
-                            '¡Escribe "Hola" o pídeme tu comida favorita!', 
-                            textAlign: TextAlign.center, 
-                            style: AppText.body.copyWith(color: AppColors.textSecondary)
+                            '¡Escribe "Hola" o pídeme tu comida favorita!',
+                            textAlign: TextAlign.center,
+                            style: AppText.body.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                         ],
                       ),
@@ -432,15 +508,18 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
               },
             ),
           ),
-          
-          if (_isTyping) 
+
+          if (_isTyping)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'SnackBot está procesando tu petición...', 
-                  style: AppText.notes.copyWith(color: AppColors.textSecondary, fontStyle: FontStyle.italic)
+                  'SnackBot está procesando tu petición...',
+                  style: AppText.notes.copyWith(
+                    color: AppColors.textSecondary,
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
               ),
             ),
@@ -461,20 +540,27 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
           margin: const EdgeInsets.symmetric(vertical: 8),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: AppColors.success.withOpacity(0.1), 
-            borderRadius: BorderRadius.circular(20), 
-            border: Border.all(color: AppColors.success.withOpacity(0.5))
+            color: AppColors.success.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.success.withOpacity(0.5)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.check_circle_rounded, color: AppColors.success, size: 16),
+              Icon(
+                Icons.check_circle_rounded,
+                color: AppColors.success,
+                size: 16,
+              ),
               const SizedBox(width: 8),
               Flexible(
                 child: Text(
-                  msg['text'] ?? '', 
-                  style: AppText.notes.copyWith(color: AppColors.success, fontWeight: FontWeight.w700), 
-                  textAlign: TextAlign.left
+                  msg['text'] ?? '',
+                  style: AppText.notes.copyWith(
+                    color: AppColors.success,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  textAlign: TextAlign.left,
                 ),
               ),
             ],
@@ -491,23 +577,27 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
         decoration: BoxDecoration(
           color: isMe ? AppColors.primary : AppColors.componentBase,
           borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16), 
-            topRight: const Radius.circular(16), 
-            bottomLeft: Radius.circular(isMe ? 16 : 4), 
-            bottomRight: Radius.circular(isMe ? 4 : 16)
+            topLeft: const Radius.circular(16),
+            topRight: const Radius.circular(16),
+            bottomLeft: Radius.circular(isMe ? 16 : 4),
+            bottomRight: Radius.circular(isMe ? 4 : 16),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05), 
-              blurRadius: 5, 
-              offset: const Offset(0, 2)
-            )
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 5,
+              offset: const Offset(0, 2),
+            ),
           ],
         ),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.8,
+        ),
         child: Text(
-          msg['text'] ?? '', 
-          style: AppText.body.copyWith(color: isMe ? Colors.white : AppColors.textPrimary)
+          msg['text'] ?? '',
+          style: AppText.body.copyWith(
+            color: isMe ? Colors.white : AppColors.textPrimary,
+          ),
         ),
       ),
     );
@@ -517,15 +607,15 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.background, 
-        border: Border(top: BorderSide(color: AppColors.borders)), 
+        color: AppColors.background,
+        border: Border(top: BorderSide(color: AppColors.borders)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05), 
-            blurRadius: 10, 
-            offset: const Offset(0, -5)
-          )
-        ]
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          ),
+        ],
       ),
       child: SafeArea(
         child: Row(
@@ -535,11 +625,20 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
                 controller: _messageController,
                 decoration: InputDecoration(
                   hintText: 'Ej: Pídeme 2 tortas para las 10:30 (Efectivo)',
-                  hintStyle: AppText.body.copyWith(color: AppColors.textSecondary, fontSize: 13),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+                  hintStyle: AppText.body.copyWith(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
                   filled: true,
                   fillColor: AppColors.componentBase,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
                 ),
                 style: AppText.body,
                 onSubmitted: (_) => _sendMessage(),
@@ -549,16 +648,20 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
             const SizedBox(width: 8),
             Container(
               decoration: BoxDecoration(
-                color: _isGeminiInitialized ? AppColors.primary : AppColors.componentBase, 
-                shape: BoxShape.circle
+                color: _isGeminiInitialized
+                    ? AppColors.primary
+                    : AppColors.componentBase,
+                shape: BoxShape.circle,
               ),
               child: IconButton(
                 icon: Icon(
-                  Icons.send_rounded, 
-                  color: _isGeminiInitialized ? Colors.white : AppColors.textSecondary, 
-                  size: 22
-                ), 
-                onPressed: _isGeminiInitialized ? _sendMessage : null
+                  Icons.send_rounded,
+                  color: _isGeminiInitialized
+                      ? Colors.white
+                      : AppColors.textSecondary,
+                  size: 22,
+                ),
+                onPressed: _isGeminiInitialized ? _sendMessage : null,
               ),
             ),
           ],
