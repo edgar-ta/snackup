@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:snackup/api/chat.dart';
 import 'package:snackup/theme/app_colors.dart';
 import 'package:snackup/theme/app_text.dart';
 
@@ -29,18 +30,10 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
 
     _messageController.clear();
 
-    // El ID del chat será el mismo ID del pedido para vincularlos fácilmente
-    final chatRef = FirebaseFirestore.instance.collection('chats').doc(widget.orderId);
-    
-    // Asegurarnos de que el documento del chat exista
-    final chatDoc = await chatRef.get();
-    if (!chatDoc.exists) {
-      await chatRef.set({
-        'orderId': widget.orderId,
-        'type': 'order_support',
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-    }
+    final (chatRef, chatDoc, _) = await ensureSupportChatExists(
+      orderId: widget.orderId,
+      isBusiness: widget.isBusiness,
+    );
 
     // Guardar el mensaje
     await chatRef.collection('messages').add({
@@ -90,15 +83,11 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
       body: Column(
         children: [
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('chats')
-                  .doc(widget.orderId)
-                  .collection('messages')
-                  .orderBy('timestamp', descending: true)
-                  .snapshots(),
+            child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: getMessagesInSupportChat(orderId: widget.orderId),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+                if (snapshot.connectionState == ConnectionState.waiting &&
+                    !snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
@@ -116,11 +105,13 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          widget.isBusiness 
+                          widget.isBusiness
                               ? 'Escríbele al cliente si hay algún\nproblema con su pedido.'
                               : '¿Tienes alguna duda o problema?\nEscríbele directo a la cocina.',
                           textAlign: TextAlign.center,
-                          style: AppText.body.copyWith(color: AppColors.textSecondary),
+                          style: AppText.body.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ],
                     ),
@@ -134,25 +125,32 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     final msg = messages[index].data() as Map<String, dynamic>;
-                    
+
                     // Comprobamos si el mensaje lo envié YO
                     final bool isMe = msg['senderId'] == _currentUserId;
                     // Comprobamos si el mensaje viene del negocio o del cliente
                     final bool fromBusiness = msg['isBusiness'] ?? false;
 
                     return Align(
-                      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                      alignment: isMe
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
                       child: ConstrainedBox(
                         constraints: BoxConstraints(
                           maxWidth: MediaQuery.of(context).size.width * 0.8,
                         ),
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                           decoration: BoxDecoration(
-                            color: isMe 
-                                ? AppColors.primary 
-                                : (fromBusiness ? AppColors.tertiary : AppColors.componentBase),
+                            color: isMe
+                                ? AppColors.primary
+                                : (fromBusiness
+                                      ? AppColors.tertiary
+                                      : AppColors.componentBase),
                             borderRadius: BorderRadius.only(
                               topLeft: const Radius.circular(16),
                               topRight: const Radius.circular(16),
@@ -164,15 +162,17 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
                                 color: Colors.black.withOpacity(0.05),
                                 blurRadius: 5,
                                 offset: const Offset(0, 2),
-                              )
+                              ),
                             ],
                           ),
                           child: Text(
                             msg['text'] ?? '',
                             style: AppText.body.copyWith(
-                              color: isMe 
-                                  ? Colors.white 
-                                  : (fromBusiness ? Colors.white : AppColors.textPrimary),
+                              color: isMe
+                                  ? Colors.white
+                                  : (fromBusiness
+                                        ? Colors.white
+                                        : AppColors.textPrimary),
                             ),
                           ),
                         ),
@@ -183,7 +183,7 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
               },
             ),
           ),
-          
+
           // ZONA DE ESCRIBIR
           Container(
             padding: const EdgeInsets.all(12),
@@ -195,8 +195,8 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
                   color: Colors.black.withOpacity(0.05),
                   blurRadius: 10,
                   offset: const Offset(0, -5),
-                )
-              ]
+                ),
+              ],
             ),
             child: SafeArea(
               child: Row(
@@ -206,14 +206,19 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
                       controller: _messageController,
                       decoration: InputDecoration(
                         hintText: 'Escribe un mensaje...',
-                        hintStyle: AppText.body.copyWith(color: AppColors.textSecondary),
+                        hintStyle: AppText.body.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24),
                           borderSide: BorderSide.none,
                         ),
                         filled: true,
                         fillColor: AppColors.componentBase,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
                       ),
                       style: AppText.body,
                       onSubmitted: (_) => _sendMessage(),
@@ -226,7 +231,11 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.send_rounded, color: Colors.white, size: 22),
+                      icon: const Icon(
+                        Icons.send_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
                       onPressed: _sendMessage,
                     ),
                   ),

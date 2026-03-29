@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:snackup/api/chat.dart';
 import '../auth/auth_gate.dart';
+import 'package:snackup/api/order.dart';
 import 'package:snackup/theme/app_colors.dart';
 import 'package:snackup/theme/app_text.dart';
+import 'package:snackup/types.dart';
 
 // 👇 IMPORTAMOS LA PANTALLA DEL CHAT (Ajusta la ruta según dónde la hayas guardado)
 import '../home/order_chat_screen.dart';
@@ -17,19 +20,31 @@ class OrderDetailScreen extends StatefulWidget {
 }
 
 class _OrderDetailScreenState extends State<OrderDetailScreen> {
-  DocumentReference get _orderRef =>
-      FirebaseFirestore.instance.collection('orders').doc(widget.orderId);
+  late Future<OrderDetail?> _orderFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _orderFuture = getOrderDetail(orderId: widget.orderId, isBusiness: true);
+  }
 
   Future<void> _updateOrderStatus(String newStatus) async {
     try {
-      await _orderRef.update({'status': newStatus});
       if (mounted) {
+        setState(() {
+          _orderFuture = getOrderDetail(
+            orderId: widget.orderId,
+            isBusiness: true,
+          );
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Pedido marcado como "$newStatus"'),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
         if (newStatus == 'completed' || newStatus == 'cancelled') {
@@ -45,7 +60,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           content: Text('Error al actualizar: ${e.toString()}'),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     }
@@ -72,22 +89,26 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     final List<Barcode> barcodes = capture.barcodes;
                     if (barcodes.isNotEmpty) {
                       final String qrValue = barcodes.first.rawValue ?? '';
-                      
+
                       if (qrValue == numeroDeControlCorrecto) {
                         _updateOrderStatus('completed');
                         if (Navigator.of(scannerContext).canPop()) {
                           Navigator.of(scannerContext).pop();
                         }
                       } else {
-                        if (Navigator.of(scannerContext).canPop()){
+                        if (Navigator.of(scannerContext).canPop()) {
                           Navigator.of(scannerContext).pop();
                         }
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: const Text('QR incorrecto. Este no es el pedido.'),
+                            content: const Text(
+                              'QR incorrecto. Este no es el pedido.',
+                            ),
                             backgroundColor: AppColors.error,
                             behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         );
                       }
@@ -100,9 +121,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 color: AppColors.background,
                 child: Text(
                   'Escanea el código QR del estudiante para confirmar la entrega',
-                  style: AppText.body.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+                  style: AppText.body.copyWith(color: AppColors.textSecondary),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -113,16 +132,14 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
   }
 
-  void _showManualInputDialog(String numeroDeControlCorrecto) {
+  void _showManualInputDialog(String correctCode) {
     final TextEditingController manualInputController = TextEditingController();
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(
           'Confirmar Entrega Manual',
-          style: AppText.h3.copyWith(
-            color: AppColors.textPrimary,
-          ),
+          style: AppText.h3.copyWith(color: AppColors.textPrimary),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -130,9 +147,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           children: [
             Text(
               'Ingresa el número de control del estudiante:',
-              style: AppText.body.copyWith(
-                color: AppColors.textSecondary,
-              ),
+              style: AppText.body.copyWith(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 16),
             TextField(
@@ -156,15 +171,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text(
               'Cancelar',
-              style: AppText.body.copyWith(
-                color: AppColors.textSecondary,
-              ),
+              style: AppText.body.copyWith(color: AppColors.textSecondary),
             ),
           ),
           ElevatedButton(
             onPressed: () {
               final enteredNumber = manualInputController.text.trim();
-              if (enteredNumber == numeroDeControlCorrecto) {
+              if (enteredNumber == correctCode) {
                 Navigator.of(dialogContext).pop();
                 _updateOrderStatus('completed');
               } else {
@@ -174,7 +187,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     content: const Text('Número de Control incorrecto'),
                     backgroundColor: AppColors.error,
                     behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 );
               }
@@ -210,46 +225,38 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         foregroundColor: AppColors.textPrimary,
-        
-        // 👇 AQUÍ ESTÁ EL NUEVO BOTÓN DE CHAT
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 8),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: Icon(Icons.chat_bubble_rounded, color: AppColors.primary),
-              tooltip: 'Chat con el Estudiante',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => OrderChatScreen(
-                      orderId: widget.orderId,
-                      isBusiness: true, // TRUE porque estamos en la pantalla de la cocina
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-        // 👆 FIN DEL BOTÓN NUEVO
-        
       ),
-      body: StreamBuilder<DocumentSnapshot>(
-        stream: _orderRef.snapshots(),
+      body: FutureBuilder<OrderDetail?>(
+        future: _orderFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primary,
+              child: CircularProgressIndicator(color: AppColors.primary),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline_rounded,
+                    size: 64,
+                    color: AppColors.error.withOpacity(0.7),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error al cargar el pedido',
+                    style: AppText.h3.copyWith(color: AppColors.textPrimary),
+                  ),
+                ],
               ),
             );
           }
-          if (!snapshot.hasData || !snapshot.data!.exists) {
+
+          final orderDetail = snapshot.data;
+          if (orderDetail == null) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -262,21 +269,17 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   const SizedBox(height: 16),
                   Text(
                     'Pedido no encontrado',
-                    style: AppText.h3.copyWith(
-                      color: AppColors.textPrimary,
-                    ),
+                    style: AppText.h3.copyWith(color: AppColors.textPrimary),
                   ),
                 ],
               ),
             );
           }
 
-          final order = snapshot.data!.data() as Map<String, dynamic>;
-          final String status = order['status'] ?? 'pending';
-          final String numeroDeControl = order['userNumeroDeControl'] ?? '000000';
-          final List<dynamic> items = order['items'] ?? [];
-          final Timestamp? timestamp = order['createdAt'];
-          final DateTime? orderTime = timestamp?.toDate();
+          final String status = orderDetail.status;
+          final String numeroDeControl = orderDetail.userNumeroDeControl;
+          final List<OrderItem> items = orderDetail.items;
+          final DateTime? orderTime = orderDetail.createdAt;
 
           return Column(
             children: [
@@ -287,10 +290,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 decoration: BoxDecoration(
                   color: _getStatusColor(status).withOpacity(0.1),
                   border: Border(
-                    bottom: BorderSide(
-                      color: AppColors.borders,
-                      width: 1,
-                    ),
+                    bottom: BorderSide(color: AppColors.borders, width: 1),
                   ),
                 ),
                 child: Column(
@@ -350,7 +350,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                           _buildInfoRow(
                             icon: Icons.person_rounded,
                             label: 'Nombre',
-                            value: order['userDisplayName'] ?? 'N/A',
+                            value: orderDetail.userDisplayName,
                           ),
                           _buildInfoRow(
                             icon: Icons.badge_rounded,
@@ -360,21 +360,21 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                           _buildInfoRow(
                             icon: Icons.payment_rounded,
                             label: 'Método de Pago',
-                            value: order['paymentMethod'] ?? 'N/A',
+                            value: orderDetail.paymentMethod,
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 24),
 
                       // PRODUCTOS
                       _buildInfoSection(
                         title: 'Productos',
                         children: [
-                          ...items.map((item) => _buildProductItem(item)).toList(),
+                          ...items
+                              .map((item) => _buildProductItem(item))
+                              .toList(),
                         ],
                       ),
-
                       const SizedBox(height: 24),
 
                       // TOTAL
@@ -394,7 +394,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                               ),
                             ),
                             Text(
-                              '\$${(order['totalPrice'] ?? 0.0).toStringAsFixed(2)}',
+                              '\$${orderDetail.totalPrice.toStringAsFixed(2)}',
                               style: AppText.h1.copyWith(
                                 color: AppColors.success,
                                 fontSize: 24,
@@ -416,10 +416,74 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           );
         },
       ),
+      floatingActionButton: FutureBuilder<OrderDetail?>(
+        future: _orderFuture,
+        builder: (context, snapshot) {
+          final bool hasNewMessages = snapshot.data?.hasNewMessages ?? false;
+          return FloatingActionButton.extended(
+            label: Text("Chat", style: TextStyle(color: Colors.white)),
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => OrderChatScreen(
+                    orderId: widget.orderId,
+                    isBusiness: true,
+                  ),
+                ),
+              );
+
+              await updateLastSeenTimeInSupportChat(
+                orderId: widget.orderId,
+                isBusiness: true,
+              );
+
+              if (!mounted) return;
+              setState(() {
+                _orderFuture = getOrderDetail(
+                  orderId: widget.orderId,
+                  isBusiness: true,
+                );
+              });
+            },
+            backgroundColor: AppColors.primary,
+            icon: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                const Icon(Icons.chat_bubble_rounded, color: Colors.white),
+                if (hasNewMessages)
+                  Positioned(
+                    right: -2,
+                    top: -2,
+                    child: Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Container(
+                        margin: const EdgeInsets.all(2),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildInfoSection({required String title, required List<Widget> children}) {
+  Widget _buildInfoSection({
+    required String title,
+    required List<Widget> children,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -437,24 +501,22 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             color: AppColors.componentBase,
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Column(
-            children: children,
-          ),
+          child: Column(children: children),
         ),
       ],
     );
   }
 
-  Widget _buildInfoRow({required IconData icon, required String label, required String value}) {
+  Widget _buildInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 20,
-            color: AppColors.textSecondary,
-          ),
+          Icon(icon, size: 20, color: AppColors.textSecondary),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -469,9 +531,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             flex: 2,
             child: Text(
               value,
-              style: AppText.body.copyWith(
-                color: AppColors.textSecondary,
-              ),
+              style: AppText.body.copyWith(color: AppColors.textSecondary),
               textAlign: TextAlign.right,
             ),
           ),
@@ -480,17 +540,15 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
   }
 
-  Widget _buildProductItem(dynamic item) {
-    final String notes = item['notes'] ?? '';
+  Widget _buildProductItem(OrderItem item) {
+    final String notes = item.notes;
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.background,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.borders,
-        ),
+        border: Border.all(color: AppColors.borders),
       ),
       child: Row(
         children: [
@@ -501,7 +559,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
-              '${item['quantity']}x',
+              '${item.quantity}x',
               style: AppText.body.copyWith(
                 fontWeight: FontWeight.w700,
                 color: AppColors.primary,
@@ -514,7 +572,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item['name'] ?? 'Producto',
+                  item.name.isNotEmpty ? item.name : 'Producto',
                   style: AppText.body.copyWith(
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
@@ -534,7 +592,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             ),
           ),
           Text(
-            '\$${(item['price'] ?? 0.0).toStringAsFixed(2)}',
+            '\$${item.price.toStringAsFixed(2)}',
             style: AppText.body.copyWith(
               fontWeight: FontWeight.w600,
               color: AppColors.success,
@@ -701,19 +759,14 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.info_outline_rounded,
-            color: AppColors.tertiary,
-          ),
+          Icon(Icons.info_outline_rounded, color: AppColors.tertiary),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              status == 'completed' 
+              status == 'completed'
                   ? 'Pedido completado y entregado'
                   : 'Pedido cancelado',
-              style: AppText.body.copyWith(
-                color: AppColors.textSecondary,
-              ),
+              style: AppText.body.copyWith(color: AppColors.textSecondary),
             ),
           ),
         ],
@@ -723,23 +776,35 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   Color _getStatusColor(String status) {
     switch (status) {
-      case 'pending': return AppColors.warning;
-      case 'preparing': return AppColors.tertiary;
-      case 'ready': return AppColors.primary;
-      case 'completed': return AppColors.success;
-      case 'cancelled': return AppColors.error;
-      default: return AppColors.textSecondary;
+      case 'pending':
+        return AppColors.warning;
+      case 'preparing':
+        return AppColors.tertiary;
+      case 'ready':
+        return AppColors.primary;
+      case 'completed':
+        return AppColors.success;
+      case 'cancelled':
+        return AppColors.error;
+      default:
+        return AppColors.textSecondary;
     }
   }
 
   String _getStatusText(String status) {
     switch (status) {
-      case 'pending': return 'PENDIENTE';
-      case 'preparing': return 'PREPARANDO';
-      case 'ready': return 'LISTO';
-      case 'completed': return 'COMPLETADO';
-      case 'cancelled': return 'CANCELADO';
-      default: return status.toUpperCase();
+      case 'pending':
+        return 'PENDIENTE';
+      case 'preparing':
+        return 'PREPARANDO';
+      case 'ready':
+        return 'LISTO';
+      case 'completed':
+        return 'COMPLETADO';
+      case 'cancelled':
+        return 'CANCELADO';
+      default:
+        return status.toUpperCase();
     }
   }
 }
