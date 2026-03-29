@@ -80,10 +80,10 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       _showError('Necesitas dar permiso a la galería para subir fotos.');
       return;
     }
-
+    
     final ImagePicker picker = ImagePicker();
     final XFile? pickedFile = await picker.pickImage(
-      source: ImageSource.gallery,
+      source: ImageSource.gallery, 
       imageQuality: 70,
       maxWidth: 800,
     );
@@ -97,12 +97,11 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
 
   Future<String?> _uploadImage() async {
     if (_imageFile == null) return null;
-
+    
     setState(() => _isLoading = true);
-
+    
     try {
-      String fileName =
-          '${widget.businessId}-${DateTime.now().millisecondsSinceEpoch}.jpg';
+      String fileName = '${widget.businessId}-${DateTime.now().millisecondsSinceEpoch}.jpg';
       Reference storageRef = FirebaseStorage.instance
           .ref()
           .child('product_images')
@@ -118,12 +117,13 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
 
       TaskSnapshot taskSnapshot = await uploadTask;
       String downloadUrl = await taskSnapshot.ref.getDownloadURL();
-
+      
       setState(() {
         _isLoading = false;
         _uploadProgress = 0;
       });
       return downloadUrl;
+
     } catch (e) {
       _showError('Error al subir imagen: $e');
       setState(() {
@@ -148,7 +148,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       } else {
         imageUrl = _existingImageUrl;
       }
-
+      
       final price = double.tryParse(_priceController.text) ?? 0.0;
       final stock = int.tryParse(_stockController.text) ?? 0;
 
@@ -178,10 +178,11 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       }
 
       if (mounted) Navigator.of(context).pop();
+
     } catch (e) {
       _showError('Error al guardar: ${e.toString()}');
     }
-
+    
     if (mounted) {
       setState(() => _isLoading = false);
     }
@@ -213,10 +214,13 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         foregroundColor: AppColors.textPrimary,
+        actions: _isEditing ? [_buildDeleteButton()] : null,
       ),
       body: _isLoading && _uploadProgress == 0
           ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
+              child: CircularProgressIndicator(
+                color: AppColors.primary,
+              ),
             )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(20.0),
@@ -245,9 +249,9 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              _isEditing
-                                  ? 'Actualiza la información de tu producto'
-                                  : 'Agrega un nuevo producto a tu menú',
+                              _isEditing 
+                                ? 'Actualiza la información de tu producto'
+                                : 'Agrega un nuevo producto a tu menú',
                               style: AppText.notes.copyWith(
                                 color: AppColors.tertiary,
                                 fontWeight: FontWeight.w500,
@@ -289,22 +293,17 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                       const SizedBox(height: 16),
                     ],
 
+                    // FORMULARIO MEJORADO
                     _buildFormFields(),
+
+                    const SizedBox(height: 24),
+
+                    // BOTÓN DE GUARDAR MEJORADO
+                    _buildSaveButton(),
                   ],
                 ),
               ),
             ),
-      bottomNavigationBar: BottomAppBar(
-        padding: const EdgeInsets.all(8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          spacing: 8,
-          children: [
-            Expanded(child: _buildSaveButton()),
-            if (_isEditing) Expanded(child: _buildDeleteButton()),
-          ],
-        ),
-      ),
     );
   }
 
@@ -328,7 +327,10 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
             decoration: BoxDecoration(
               color: AppColors.componentBase,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.borders, width: 2),
+              border: Border.all(
+                color: AppColors.borders,
+                width: 2,
+              ),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(14),
@@ -337,7 +339,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                 children: [
                   // CONTENIDO DE LA IMAGEN
                   _buildImageContent(),
-
+                  
                   // OVERLAY PARA SELECCIONAR
                   Container(
                     decoration: BoxDecoration(
@@ -369,7 +371,9 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
         const SizedBox(height: 4),
         Text(
           'Toca para seleccionar una imagen',
-          style: AppText.notes.copyWith(color: AppColors.textSecondary),
+          style: AppText.notes.copyWith(
+            color: AppColors.textSecondary,
+          ),
         ),
       ],
     );
@@ -388,8 +392,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           return Center(
             child: CircularProgressIndicator(
               value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded /
-                        loadingProgress.expectedTotalBytes!
+                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
                   : null,
               color: AppColors.primary,
             ),
@@ -413,7 +416,9 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
         const SizedBox(height: 8),
         Text(
           'Agregar imagen',
-          style: AppText.notes.copyWith(color: AppColors.textSecondary),
+          style: AppText.notes.copyWith(
+            color: AppColors.textSecondary,
+          ),
         ),
       ],
     );
@@ -599,7 +604,9 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               const SizedBox(height: 4),
               Text(
                 subtitle,
-                style: AppText.notes.copyWith(color: AppColors.textSecondary),
+                style: AppText.notes.copyWith(
+                  color: AppColors.textSecondary,
+                ),
               ),
             ],
           ),
@@ -620,10 +627,11 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
         backgroundColor: _isEditing ? AppColors.accent : AppColors.primary,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
         elevation: 2,
-        shadowColor: (_isEditing ? AppColors.accent : AppColors.primary)
-            .withOpacity(0.3),
+        shadowColor: (_isEditing ? AppColors.accent : AppColors.primary).withOpacity(0.3),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -638,12 +646,15 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               ),
             )
           else
-            Icon(_isEditing ? Icons.save_rounded : Icons.add_rounded, size: 20),
+            Icon(
+              _isEditing ? Icons.save_rounded : Icons.add_rounded,
+              size: 20,
+            ),
           const SizedBox(width: 8),
           Text(
-            _isLoading
-                ? 'Guardando...'
-                : (_isEditing ? 'Guardar Cambios' : 'Agregar Producto'),
+            _isLoading 
+              ? 'Guardando...' 
+              : (_isEditing ? 'Guardar Cambios' : 'Agregar Producto'),
             style: AppText.body.copyWith(
               fontWeight: FontWeight.w600,
               color: Colors.white,
@@ -656,16 +667,11 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   }
 
   Widget _buildDeleteButton() {
-    return ElevatedButton(
-      onPressed: () {},
-      style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.delete_outline_rounded),
-          Text("Eliminar producto"),
-        ],
-      ),
+    return IconButton(
+      icon: const Icon(Icons.delete_outline_rounded),
+      onPressed: () {
+        // TODO: Implementar eliminación
+      },
     );
   }
 
