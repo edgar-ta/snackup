@@ -4,6 +4,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:snackup/theme/app_colors.dart';
 import 'package:snackup/theme/app_text.dart';
 
+enum DateRangeOption { lastWeek, lastMonth, allTime }
+
 class StatisticsScreen extends StatefulWidget {
   final String businessId;
   const StatisticsScreen({super.key, required this.businessId});
@@ -14,6 +16,7 @@ class StatisticsScreen extends StatefulWidget {
 
 class _StatisticsScreenState extends State<StatisticsScreen> {
   late Stream<QuerySnapshot> _completedOrdersStream;
+  DateRangeOption _selectedRange = DateRangeOption.lastWeek;
 
   @override
   void initState() {
@@ -54,18 +57,42 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           }
 
           final docs = snapshot.data!.docs;
-          
-          final double totalRevenue = _calculateTotalRevenue(docs);
-          final Map<String, int> paymentMethods = _calculatePaymentMethods(docs);
-          final Map<String, int> topItems = _calculateTopItems(docs);
-          final Map<int, double> salesByDay = _calculateSalesByDay(docs);
-          final int totalOrders = docs.length;
+          // 1. Filtramos los documentos según el rango seleccionado
+          final filteredDocs = _filterDocsByDateRange(docs, _selectedRange);
 
+          // 2. Si el filtro deja la lista vacía, mostramos el selector y el estado vacío
+          if (filteredDocs.isEmpty) {
+            return Column(
+              children: [
+                const SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _buildDateRangeSelector(),
+                ),
+                Expanded(child: _buildEmptyRangeState()),
+              ],
+            );
+          }
+
+          // 3. Cálculos basados en los documentos ya filtrados
+          final double totalRevenue = _calculateTotalRevenue(filteredDocs);
+          final int totalOrders = filteredDocs.length;
+          final Map<String, int> paymentMethods = _calculatePaymentMethods(filteredDocs);
+          final Map<String, int> topItems = _calculateTopItems(filteredDocs);
+          final Map<int, double> salesByDay = _calculateSalesByDay(filteredDocs);
+
+          final String salesTitle = _selectedRange == DateRangeOption.lastWeek
+              ? 'Ventas - Últimos 7 Días'
+              : _selectedRange == DateRangeOption.lastMonth
+                  ? 'Ventas - Últimos 30 Días'
+                  : 'Ventas - Todo el tiempo';
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _buildDateRangeSelector(),
+                const SizedBox(height: 24),
                 // TARJETA DE INGRESOS PRINCIPAL
                 _buildRevenueCard(totalRevenue, totalOrders),
 
@@ -73,7 +100,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
                 // GRÁFICA DE VENTAS POR DÍA
                 _buildChartSection(
-                  title: 'Ventas - Últimos 7 Días',
+                  title: salesTitle,
                   subtitle: 'Distribución de ingresos por día de la semana',
                   child: _buildSalesByDayChart(salesByDay),
                 ),
@@ -719,6 +746,105 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   // --- FUNCIONES DE CÁLCULO ---
+  Widget _buildDateRangeSelector() {
+    return Wrap(
+      spacing: 8,
+      children: DateRangeOption.values.map((range) {
+        final selected = _selectedRange == range;
+        return ChoiceChip(
+          label: Text(_getRangeLabel(range)),
+          selected: selected,
+          selectedColor: AppColors.primary,
+          backgroundColor: AppColors.componentBase,
+          labelStyle: AppText.body.copyWith(
+            color: selected ? Colors.white : AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          onSelected: (_) {
+            setState(() {
+              _selectedRange = range;
+            });
+          },
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildEmptyRangeState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.calendar_month_rounded,
+              size: 64,
+              color: AppColors.textSecondary.withOpacity(0.6),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No hay datos en este rango',
+              style: AppText.h3.copyWith(color: AppColors.textPrimary),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Selecciona otro rango para ver estadísticas.',
+              style: AppText.body.copyWith(color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getRangeLabel(DateRangeOption range) {
+    switch (range) {
+      case DateRangeOption.lastWeek:
+        return 'Última semana';
+      case DateRangeOption.lastMonth:
+        return 'Último mes';
+      case DateRangeOption.allTime:
+        return 'Todo el tiempo';
+    }
+  }
+
+  DateTime _getRangeStart(DateRangeOption range) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    switch (range) {
+      case DateRangeOption.lastWeek:
+        return today.subtract(const Duration(days: 6));
+      case DateRangeOption.lastMonth:
+        return today.subtract(const Duration(days: 29));
+      case DateRangeOption.allTime:
+        return DateTime.fromMillisecondsSinceEpoch(0);
+    }
+  }
+
+  List<QueryDocumentSnapshot> _filterDocsByDateRange(
+    List<QueryDocumentSnapshot> docs,
+    DateRangeOption range,
+  ) {
+    if (range == DateRangeOption.allTime) return docs;
+
+    final start = _getRangeStart(range);
+    final now = DateTime.now();
+
+    return docs.where((doc) {
+      final timestamp = doc['createdAt'] as Timestamp?;
+      if (timestamp == null) return false;
+      final date = timestamp.toDate();
+      return !date.isBefore(start) && !date.isAfter(now);
+    }).toList();
+  }
+
+  // --- FUNCIONES DE CÁLCULO (Sin cambios) ---
   double _calculateTotalRevenue(List<QueryDocumentSnapshot> docs) {
     double total = 0.0;
     for (var doc in docs) {
@@ -752,20 +878,18 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
   
   Map<int, double> _calculateSalesByDay(List<QueryDocumentSnapshot> docs) {
+    // Inicializamos los 7 días de la semana en 0 (1=Lunes, 7=Domingo)
     Map<int, double> dailySales = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0};
-    final now = DateTime.now();
-    final sevenDaysAgo = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 6));
-
+    
     for (var doc in docs) {
       final timestamp = doc['createdAt'] as Timestamp?;
       final price = (doc['totalPrice'] as num?)?.toDouble() ?? 0.0;
-      if (timestamp == null) continue;
-      final date = timestamp.toDate();
       
-      if (date.isAfter(sevenDaysAgo)) {
+      if (timestamp != null) {
+        final date = timestamp.toDate();
+        // Sumamos el precio al día de la semana correspondiente
         dailySales[date.weekday] = (dailySales[date.weekday] ?? 0) + price;
       }
     }
     return dailySales;
   }
-}

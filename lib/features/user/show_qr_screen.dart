@@ -6,18 +6,15 @@ import 'package:snackup/theme/app_text.dart';
 
 class ShowQrScreen extends StatelessWidget {
   final String orderId;
-  final String qrData;
 
-  const ShowQrScreen({
-    super.key,
-    required this.orderId,
-    required this.qrData,
-  });
+  const ShowQrScreen({super.key, required this.orderId});
 
   @override
   Widget build(BuildContext context) {
-    final Stream<DocumentSnapshot> orderStream =
-        FirebaseFirestore.instance.collection('orders').doc(orderId).snapshots();
+    final Stream<DocumentSnapshot> orderStream = FirebaseFirestore.instance
+        .collection('orders')
+        .doc(orderId)
+        .snapshots();
 
     return Scaffold(
       appBar: AppBar(
@@ -38,14 +35,15 @@ class ShowQrScreen extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return _buildLoadingState();
           }
-          
+
           if (!snapshot.hasData || !snapshot.data!.exists) {
             return _buildErrorState('Pedido no encontrado');
           }
-          
+
           final order = snapshot.data!.data() as Map<String, dynamic>;
           final String status = order['status'] ?? '';
-          final String numeroDeControl = order['userNumeroDeControl'] ?? '0000';
+          final String redeemCode =
+              order['redeemCode'] ?? order['userNumeroDeControl'] ?? '0000';
           final double totalPrice = order['totalPrice'] ?? 0.0;
           final List<dynamic> items = order['items'] ?? [];
           final Timestamp? createdAt = order['createdAt'] as Timestamp?;
@@ -58,15 +56,17 @@ class ShowQrScreen extends StatelessWidget {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      status == 'completed' 
+                      status == 'completed'
                           ? '¡Pedido entregado! Gracias por tu compra'
                           : 'Pedido cancelado',
                     ),
-                    backgroundColor: status == 'completed' 
-                        ? AppColors.success 
+                    backgroundColor: status == 'completed'
+                        ? AppColors.success
                         : AppColors.error,
                     behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 );
               }
@@ -76,10 +76,10 @@ class ShowQrScreen extends StatelessWidget {
           if (status != 'ready') {
             return _buildNotReadyState(context, status);
           }
-          
+
           return _buildQrContent(
             context,
-            numeroDeControl,
+            redeemCode,
             totalPrice,
             items,
             createdAt,
@@ -91,7 +91,7 @@ class ShowQrScreen extends StatelessWidget {
 
   Widget _buildQrContent(
     BuildContext context,
-    String numeroDeControl,
+    String redeemCode,
     double totalPrice,
     List<dynamic> items,
     Timestamp? createdAt,
@@ -107,9 +107,7 @@ class ShowQrScreen extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.success.withOpacity(0.1),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: AppColors.success.withOpacity(0.3),
-              ),
+              border: Border.all(color: AppColors.success.withOpacity(0.3)),
             ),
             child: Column(
               children: [
@@ -121,17 +119,13 @@ class ShowQrScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 Text(
                   'Tu pedido está listo',
-                  style: AppText.h3.copyWith(
-                    color: AppColors.success,
-                  ),
+                  style: AppText.h3.copyWith(color: AppColors.success),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Muestra este código QR al personal para recoger tu pedido',
-                  style: AppText.body.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+                  style: AppText.body.copyWith(color: AppColors.textSecondary),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -166,13 +160,10 @@ class ShowQrScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: AppColors.background,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: AppColors.borders,
-                        width: 2,
-                      ),
+                      border: Border.all(color: AppColors.borders, width: 2),
                     ),
                     child: QrImageView(
-                      data: qrData,
+                      data: redeemCode,
                       version: QrVersions.auto,
                       size: 220,
                       backgroundColor: Colors.white,
@@ -207,7 +198,7 @@ class ShowQrScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          numeroDeControl,
+                          redeemCode,
                           style: AppText.h1.copyWith(
                             color: AppColors.primary,
                             fontSize: 28,
@@ -242,41 +233,48 @@ class ShowQrScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // ITEMS DEL PEDIDO
-                ...items.take(3).map((item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          '${item['quantity']}x',
-                          style: AppText.notes.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w700,
-                          ),
+                ...items
+                    .take(3)
+                    .map(
+                      (item) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                '${item['quantity']}x',
+                                style: AppText.notes.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                item['name'] ?? 'Producto',
+                                style: AppText.body.copyWith(
+                                  color: AppColors.textPrimary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          item['name'] ?? 'Producto',
-                          style: AppText.body.copyWith(
-                            color: AppColors.textPrimary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                )),
-                
+                    ),
+
                 if (items.length > 3) ...[
                   const SizedBox(height: 8),
                   Text(
@@ -286,11 +284,11 @@ class ShowQrScreen extends StatelessWidget {
                     ),
                   ),
                 ],
-                
+
                 const SizedBox(height: 16),
                 const Divider(height: 1, color: AppColors.borders),
                 const SizedBox(height: 16),
-                
+
                 // TOTAL
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -358,9 +356,7 @@ class ShowQrScreen extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             'Cargando código de entrega...',
-            style: AppText.body.copyWith(
-              color: AppColors.textSecondary,
-            ),
+            style: AppText.body.copyWith(color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -382,9 +378,7 @@ class ShowQrScreen extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               message,
-              style: AppText.h3.copyWith(
-                color: AppColors.textPrimary,
-              ),
+              style: AppText.h3.copyWith(color: AppColors.textPrimary),
               textAlign: TextAlign.center,
             ),
           ],
@@ -424,26 +418,18 @@ class ShowQrScreen extends StatelessWidget {
                 color: color.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                icon,
-                size: 50,
-                color: color,
-              ),
+              child: Icon(icon, size: 50, color: color),
             ),
             const SizedBox(height: 24),
             Text(
               title,
-              style: AppText.h3.copyWith(
-                color: AppColors.textPrimary,
-              ),
+              style: AppText.h3.copyWith(color: AppColors.textPrimary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
               subtitle,
-              style: AppText.body.copyWith(
-                color: AppColors.textSecondary,
-              ),
+              style: AppText.body.copyWith(color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
