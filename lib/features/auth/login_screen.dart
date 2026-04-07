@@ -4,6 +4,7 @@ import 'business_login_screen.dart';
 import 'register_screen.dart';
 import 'package:snackup/theme/app_colors.dart';
 import 'package:snackup/theme/app_text.dart';
+import 'package:snackup/features/home/password_reset_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -227,7 +228,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           alignment: Alignment.centerRight,
                           child: TextButton(
                             onPressed: () {
-                              // TODO: Implementar recuperación de contraseña
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const PasswordResetScreen(),
+                                ),
+                              );
                             },
                             child: Text(
                               '¿Olvidaste tu contraseña?',
