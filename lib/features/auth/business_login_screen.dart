@@ -37,12 +37,11 @@ class _BusinessLoginScreenState extends State<BusinessLoginScreen> {
       if (mounted) {
         Navigator.of(context).pop();
       }
+
     } on FirebaseAuthException catch (e) {
       setState(() {
         _isLoading = false;
-        if (e.code == 'user-not-found' ||
-            e.code == 'wrong-password' ||
-            e.code == 'invalid-credential') {
+        if (e.code == 'user-not-found' || e.code == 'wrong-password' || e.code == 'invalid-credential') {
           _errorMessage = 'Correo o contraseña incorrectos';
         } else {
           _errorMessage = 'Ocurrió un error. Intenta de nuevo.';
@@ -96,8 +95,8 @@ class _BusinessLoginScreenState extends State<BusinessLoginScreen> {
                   children: [
                     // PLACEHOLDER PARA LOGO DEL NEGOCIO
                     Container(
-                      width: 20,
-                      height: 20,
+                      width: 80,
+                      height: 80,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [AppColors.primary, AppColors.accent],
@@ -292,7 +291,9 @@ class _BusinessLoginScreenState extends State<BusinessLoginScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.error.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                    border: Border.all(
+                      color: AppColors.error.withOpacity(0.3),
+                    ),
                   ),
                   child: Row(
                     children: [
